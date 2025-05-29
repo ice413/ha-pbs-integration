@@ -1,0 +1,9 @@
+{
+    "domain": "proxmox_backup",
+    "name": "Proxmox Backup Server",
+    "version": "1.0.0",
+    "documentation": "https://github.com/yourusername/home-assistant-proxmox-backup",
+    "dependencies": [],
+    "codeowners": ["@yourgithubusername"],
+    "requirements": ["requests"]
+  }
