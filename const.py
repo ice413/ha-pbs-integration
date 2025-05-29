@@ -1,0 +1,1 @@
+DOMAIN = "proxmox_backup"
