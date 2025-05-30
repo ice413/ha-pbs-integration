@@ -16,6 +16,22 @@ sensor:
 ``` 
 
 # Endpoints to be added:  
+I'll start with those endpoints:  
+```yaml
+  /api2/json/admin
+    /api2/json/admin/datastore  # Name of the datastore
+    /api2/json/admin/gc
+    /api2/json/admin/metrics
+    /api2/json/admin/prune
+    /api2/json/admin/sync
+    /api2/json/admin/traffic-control
+    /api2/json/admin/verify
+
+```
+
+
+# All Endpoint available:
+
 ```yaml  
 /api2/json
   /api2/json/access
