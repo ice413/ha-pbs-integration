@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from homeassistant.helpers.entity import Entity
 from .api import ProxmoxBackupAPI
 
@@ -25,7 +26,6 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
             usage_response = api.get_datastore_status(store_name)
             usage = usage_response.get("data", {})
-
             sensors.append(ProxmoxBackupSensor(store_name, usage))
 
         # Snapshot sensors per node and total
@@ -65,6 +65,17 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
         # Add total snapshot sensor
         sensors.append(ProxmoxSnapshotTotalSensor(total_snapshots_count, total_snapshots_size))
+
+        # Add GC sensors
+        try:
+            gc_data = api.get_gc_status()
+            for gc_entry in gc_data.get("data", []):
+                store = gc_entry.get("store")
+                if not store:
+                    continue
+                sensors.append(ProxmoxBackupGCSensor(store, gc_entry))
+        except Exception as e:
+            _LOGGER.warning("Failed to get GC status: %s", e)
 
         add_entities(sensors)
 
@@ -115,8 +126,6 @@ class ProxmoxBackupSensor(Entity):
 
 
 class ProxmoxSnapshotSensorPerNode(Entity):
-    """Sensor for snapshot count and total size of a single backup-type/backup-id."""
-
     def __init__(self, backup_type, backup_id, count, size_bytes):
         self._backup_type = backup_type
         self._backup_id = backup_id
@@ -166,8 +175,6 @@ class ProxmoxSnapshotSensorPerNode(Entity):
 
 
 class ProxmoxSnapshotTotalSensor(Entity):
-    """Sensor for total snapshot count and total size across all backup targets."""
-
     def __init__(self, total_count, total_size_bytes):
         self._total_count = total_count
         self._total_size_bytes = total_size_bytes
@@ -210,4 +217,54 @@ class ProxmoxSnapshotTotalSensor(Entity):
                 return f"{size:.{decimal_places}f} {unit}"
             size /= 1024
         return f"{size:.{decimal_places}f} PB"
+
+
+class ProxmoxBackupGCSensor(Entity):
+    def __init__(self, store, gc_data):
+        self._store = store
+        self._gc_data = gc_data
+
+    @property
+    def name(self):
+        return f"Proxmox Backup GC Status {self._store}"
+
+    @property
+    def unique_id(self):
+        return f"proxmox_backup_gc_status_{self._store.lower()}"
+
+    @property
+    def state(self):
+        return self._gc_data.get("last-run-state", "unknown")
+
+    @property
+    def extra_state_attributes(self):
+        dedup_factor = self._calculate_dedup_factor()
+        return {
+            "store": self._store,
+            "last_run_endtime": self._format_timestamp(self._gc_data.get("last-run-endtime")),
+            "next_run": self._format_timestamp(self._gc_data.get("next-run")),
+            "removed_bytes": self._gc_data.get("removed-bytes"),
+            "removed_chunks": self._gc_data.get("removed-chunks"),
+            "index_data_bytes": self._gc_data.get("index-data-bytes"),
+            "disk_bytes": self._gc_data.get("disk-bytes"),
+            "deduplication_factor": dedup_factor,
+        }
+
+    def _format_timestamp(self, ts):
+        if ts is None:
+            return None
+        try:
+            return datetime.fromtimestamp(ts).isoformat()
+        except Exception:
+            return str(ts)
+
+    def _calculate_dedup_factor(self):
+        index_data = self._gc_data.get("index-data-bytes", 0)
+        disk_data = self._gc_data.get("disk-bytes", 1)
+        return round(index_data / disk_data, 2) if disk_data else None
+
+    @property
+    def icon(self):
+        return "mdi:recycle"
+
 
