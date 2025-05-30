@@ -21,12 +21,53 @@ I'll start with those endpoints:
   /api2/json/admin
     /api2/json/admin/datastore  # Name of the datastore
     /api2/json/admin/gc
-    /api2/json/admin/metrics
-    /api2/json/admin/prune
-    /api2/json/admin/sync
-    /api2/json/admin/traffic-control
-    /api2/json/admin/verify
+```
 
+## so far:
+```
+Total snapshot count: sensor.proxmox_backup_total_snapshots
+    Attr:
+    total_snapshot_count: 36
+    total_snapshot_size_bytes: 250832318571
+    total_snapshot_size_human: 233.61 GB
+    unit_of_measurement: snapshots
+    device_class: count
+    icon: mdi:backup-restore
+    friendly_name: Proxmox Backup Total Snapshots
+GC: OK
+    Attr:
+    store: Backups
+    last_run_endtime: 2025-05-30T00:10:42
+    next_run: 2025-05-31T00:00:00
+    removed_bytes: 2899519552
+    removed_chunks: 1685
+    index_data_bytes: 250832284140
+    disk_bytes: 39185929546
+    deduplication_factor: 6.4
+    icon: mdi:recycle
+    friendly_name: Proxmox Backup GC Status Backups
+VM: sensor.proxmox_backup_vm_105_snapshots: 2
+    Attr:
+    backup_type: vm
+    backup_id: 105
+    snapshot_count: 2
+    total_snapshot_size_bytes: 68719478611
+    total_snapshot_size_human: 64.00 GB
+    unit_of_measurement: snapshots
+    device_class: count
+    icon: mdi:backup-restore
+    friendly_name: Proxmox Backup vm/105 Snapshots
+LXC:sensor.proxmox_backup_ct_101_snapshots: 2
+    Attr:
+    backup_type: ct
+    backup_id: 101
+    snapshot_count: 2
+    total_snapshot_size_bytes: 6130701190
+    total_snapshot_size_human: 5.71 GB
+    unit_of_measurement: snapshots
+    device_class: count
+    icon: mdi:backup-restore
+    friendly_name: Proxmox Backup ct/101 Snapshots
 ```
 
 
