@@ -12,22 +12,26 @@ class ProxmoxBackupAPI:
         })
 
     def get_datastores(self):
-        """Retrieve list of all datastores."""
         url = f"{self.base_url}/admin/datastore"
         resp = self.session.get(url, verify=False)
         resp.raise_for_status()
         return resp.json()
 
     def get_datastore_status(self, store_name):
-        """Retrieve usage status of a specific datastore."""
         url = f"{self.base_url}/admin/datastore/{store_name}/status"
         resp = self.session.get(url, verify=False)
         resp.raise_for_status()
         return resp.json()
 
     def get_snapshots(self, store_name):
-        """Retrieve all snapshots from a specific datastore."""
         url = f"{self.base_url}/admin/datastore/{store_name}/snapshots"
         resp = self.session.get(url, verify=False)
         resp.raise_for_status()
         return resp.json()
+
+    def get_gc_status(self):
+        url = f"{self.base_url}/admin/gc"
+        resp = self.session.get(url, verify=False)
+        resp.raise_for_status()
+        return resp.json()
+

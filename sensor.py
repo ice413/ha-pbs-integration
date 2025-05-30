@@ -267,4 +267,3 @@ class ProxmoxBackupGCSensor(Entity):
     def icon(self):
         return "mdi:recycle"
 
-
