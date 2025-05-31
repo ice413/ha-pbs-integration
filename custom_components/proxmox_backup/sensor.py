@@ -24,7 +24,7 @@ async def async_setup_entry(
     sensors = []
 
     try:
-        response = api.get_datastores()
+        response = await api.get_datastores()
         datastores = response.get("data", [])
 
         # Datastore usage sensors
@@ -33,11 +33,11 @@ async def async_setup_entry(
             if not store_name:
                 continue
 
-            usage_response = api.get_datastore_status(store_name)
+            usage_response = await api.get_datastore_status(store_name)
             usage = usage_response.get("data", {})
             sensors.append(ProxmoxBackupSensor(store_name, usage))
 
-        # Snapshot and GC logic stays the same
+        # Snapshot and GC logic
         snapshot_counts_per_node = {}
         snapshot_sizes_per_node = {}
         total_snapshots_count = 0
@@ -49,7 +49,7 @@ async def async_setup_entry(
                 continue
 
             try:
-                snapshots_resp = api.get_snapshots(store_name)
+                snapshots_resp = await api.get_snapshots(store_name)
                 for snap in snapshots_resp.get("data", []):
                     backup_type = snap.get("backup-type")
                     backup_id = snap.get("backup-id")
@@ -74,7 +74,7 @@ async def async_setup_entry(
         sensors.append(ProxmoxSnapshotTotalSensor(total_snapshots_count, total_snapshots_size))
 
         try:
-            gc_data = api.get_gc_status()
+            gc_data = await api.get_gc_status()
             for gc_entry in gc_data.get("data", []):
                 store = gc_entry.get("store")
                 if not store:
@@ -88,6 +88,7 @@ async def async_setup_entry(
         return
 
     async_add_entities(sensors)
+    await api.close()
 
 
 class ProxmoxBackupSensor(Entity):
@@ -273,4 +274,3 @@ class ProxmoxBackupGCSensor(Entity):
     @property
     def icon(self):
         return "mdi:recycle"
-
