@@ -1,19 +1,16 @@
 # ProxmoxBackupServer integration  
 
-##HowTo:
-* create a dir; config/custom_components/proxmox_backup  
-* copy all the files to that dir.  
-* add the following to your configuration
+Add custom-repo in HACS
+restart
+add integration
 
+## Setup:
+```
+host: https://<YOUR_HOST>:<PORT>
+Token_id: get it from your pbs ( user@pbs!<token-name>)
+token: The secret token from pbs
+```
 
-```yaml  
-# configuration.yaml
-sensor:
-  - platform: proxmox_backup
-    pbs_host: !secret pbs_host
-    pbs_token_id: !secret pbs_token_id
-    pbs_token: !secret pbs_token
-``` 
 
 # Endpoints to be added:  
 I'll start with those endpoints:  
