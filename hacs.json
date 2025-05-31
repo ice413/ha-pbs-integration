@@ -1,0 +1,7 @@
+{
+    "name": "Proxmox Backup Server",
+    "content_in_root": false,
+    "domain": "proxmox_backup",
+    "homeassistant": "2023.0.0",
+    "render_readme": true
+  }
