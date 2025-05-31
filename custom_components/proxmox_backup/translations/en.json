@@ -1,0 +1,21 @@
+{
+    "config": {
+      "step": {
+        "user": {
+          "title": "Connect to Proxmox Backup",
+          "description": "Enter your Proxmox Backup Server credentials",
+          "data": {
+            "pbs_host": "PBS Host",
+            "pbs_token_id": "Token ID",
+            "pbs_token": "Token Secret"
+          }
+        }
+      },
+      "error": {
+        "cannot_connect": "Unable to connect to the server"
+      },
+      "abort": {
+        "already_configured": "This server is already configured"
+      }
+    }
+  }

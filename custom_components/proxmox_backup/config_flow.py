@@ -1,15 +1,9 @@
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.core import callback
-from homeassistant.helpers import aiohttp_client
 from .const import DOMAIN
-
-# Optional: import your API to test login
 from .api import ProxmoxBackupAPI
 
 class ProxmoxBackupConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Handle a config flow for Proxmox Backup."""
-
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
@@ -20,16 +14,18 @@ class ProxmoxBackupConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             token_id = user_input["pbs_token_id"]
             token = user_input["pbs_token"]
 
-            # Optional: Validate connection
+            api = ProxmoxBackupAPI(host, token_id, token)
             try:
-                api = ProxmoxBackupAPI(host, token_id, token)
-                await self.hass.async_add_executor_job(api.get_datastores)
+                await api.get_datastores()
             except Exception:
                 errors["base"] = "cannot_connect"
             else:
                 return self.async_create_entry(
-                    title=f"Proxmox Backup ({host})", data=user_input
+                    title=f"Proxmox Backup ({host})",
+                    data=user_input,
                 )
+            finally:
+                await api.close()
 
         data_schema = vol.Schema({
             vol.Required("pbs_host"): str,
