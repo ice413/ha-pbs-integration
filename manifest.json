@@ -1,9 +1,0 @@
-{
-    "domain": "proxmox_backup",
-    "name": "Proxmox Backup Server",
-    "version": "1.0.0",
-    "documentation": "https://github.com:ice413/ha-pbs-integration.git",
-    "dependencies": [],
-    "codeowners": ["@yourgithubusername"],
-    "requirements": ["requests"]
-  }
