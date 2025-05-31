@@ -3,8 +3,7 @@
   "name": "Proxmox Backup Server",
   "version": "1.0.0",
   "documentation": "https://github.com/ice413/ha-pbs-integration",
-  "dependencies": [],
-  "codeowners": ["@ice413"],
   "requirements": ["requests"],
+  "codeowners": ["@ice413"],
   "iot_class": "local_polling"
 }
