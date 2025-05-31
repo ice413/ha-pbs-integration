@@ -1,34 +1,43 @@
+from homeassistant.helpers.entity import Entity
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from .api import ProxmoxBackupAPI
 import logging
 from datetime import datetime
-from homeassistant.helpers.entity import Entity
-from .api import ProxmoxBackupAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
-    """Set up the Proxmox Backup sensors."""
-    host = config.get("pbs_host")
-    token_id = config.get("pbs_token_id")
-    token = config.get("pbs_token")
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up Proxmox Backup sensors from a config entry."""
+
+    host = entry.data.get("pbs_host")
+    token_id = entry.data.get("pbs_token_id")
+    token = entry.data.get("pbs_token")
+
+    api = ProxmoxBackupAPI(host, token_id, token)
+
+    sensors = []
 
     try:
-        api = ProxmoxBackupAPI(host, token_id, token)
         response = api.get_datastores()
         datastores = response.get("data", [])
-        sensors = []
 
         # Datastore usage sensors
         for ds in datastores:
             store_name = ds.get("store")
             if not store_name:
-                _LOGGER.warning("Datastore missing 'store' key: %s", ds)
                 continue
 
             usage_response = api.get_datastore_status(store_name)
             usage = usage_response.get("data", {})
             sensors.append(ProxmoxBackupSensor(store_name, usage))
 
-        # Snapshot sensors per node and total
+        # Snapshot and GC logic stays the same
         snapshot_counts_per_node = {}
         snapshot_sizes_per_node = {}
         total_snapshots_count = 0
@@ -58,15 +67,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
             except Exception as e:
                 _LOGGER.warning("Failed to get snapshots for %s: %s", store_name, e)
 
-        # Add sensors for snapshots per node (backup-type/backup-id)
         for (backup_type, backup_id), count in snapshot_counts_per_node.items():
             size_bytes = snapshot_sizes_per_node.get((backup_type, backup_id), 0)
             sensors.append(ProxmoxSnapshotSensorPerNode(backup_type, backup_id, count, size_bytes))
 
-        # Add total snapshot sensor
         sensors.append(ProxmoxSnapshotTotalSensor(total_snapshots_count, total_snapshots_size))
 
-        # Add GC sensors
         try:
             gc_data = api.get_gc_status()
             for gc_entry in gc_data.get("data", []):
@@ -77,10 +83,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         except Exception as e:
             _LOGGER.warning("Failed to get GC status: %s", e)
 
-        add_entities(sensors)
-
     except Exception as e:
-        _LOGGER.error("Error setting up proxmox_backup sensors: %s", e)
+        _LOGGER.error("Error setting up Proxmox sensors: %s", e)
+        return
+
+    async_add_entities(sensors)
 
 
 class ProxmoxBackupSensor(Entity):

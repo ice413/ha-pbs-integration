@@ -5,5 +5,6 @@
   "documentation": "https://github.com/ice413/ha-pbs-integration",
   "requirements": ["requests"],
   "codeowners": ["@ice413"],
-  "iot_class": "local_polling"
+  "iot_class": "local_polling",
+  "config_flow": true
 }
