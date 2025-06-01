@@ -5,13 +5,12 @@ from .const import DOMAIN
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Set up Proxmox Backup from YAML (if used)."""
-    return True  # Optional if you don't support YAML setup anymore
+    return True  # Optional if YAML setup is not used
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Proxmox Backup from a config entry (UI)."""
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "sensor")
-    )
+    # ✅ Await platform setup directly
+    await hass.config_entries.async_forward_entry_setup(entry, "sensor")
     return True
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
