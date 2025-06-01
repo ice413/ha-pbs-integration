@@ -2,7 +2,7 @@ from homeassistant.helpers.entity import Entity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from .api import ProxmoxBackupAPI
+from .coordinator import ProxmoxBackupCoordinator
 import logging
 from datetime import datetime
 
@@ -13,90 +13,58 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Proxmox Backup sensors from a config entry."""
+    """Set up Proxmox Backup sensors from a config entry using DataUpdateCoordinator."""
 
-    host = entry.data.get("pbs_host")
-    token_id = entry.data.get("pbs_token_id")
-    token = entry.data.get("pbs_token")
-
-    api = ProxmoxBackupAPI(host, token_id, token)
+    coordinator = ProxmoxBackupCoordinator(hass, entry)
+    await coordinator.async_config_entry_first_refresh()
 
     sensors = []
 
-    try:
-        response = await api.get_datastores()
-        datastores = response.get("data", [])
+    # Usage sensors
+    usage_data = coordinator.data.get("usage", {})
+    for store_name, usage in usage_data.items():
+        sensors.append(ProxmoxBackupSensor(coordinator, store_name, usage))
 
-        # Datastore usage sensors
-        for ds in datastores:
-            store_name = ds.get("store")
-            if not store_name:
-                continue
+    # Snapshot sensors aggregation
+    snapshot_counts_per_node = {}
+    snapshot_sizes_per_node = {}
+    total_snapshots_count = 0
+    total_snapshots_size = 0
 
-            usage_response = await api.get_datastore_status(store_name)
-            usage = usage_response.get("data", {})
-            sensors.append(ProxmoxBackupSensor(store_name, usage))
+    for snap in coordinator.data.get("snapshots", []):
+        backup_type = snap.get("backup-type")
+        backup_id = snap.get("backup-id")
+        size = snap.get("size", 0)
+        if not backup_type or not backup_id:
+            continue
 
-        # Snapshot and GC logic
-        snapshot_counts_per_node = {}
-        snapshot_sizes_per_node = {}
-        total_snapshots_count = 0
-        total_snapshots_size = 0
+        key = (backup_type, backup_id)
+        snapshot_counts_per_node[key] = snapshot_counts_per_node.get(key, 0) + 1
+        snapshot_sizes_per_node[key] = snapshot_sizes_per_node.get(key, 0) + size
 
-        for ds in datastores:
-            store_name = ds.get("store")
-            if not store_name:
-                continue
+        total_snapshots_count += 1
+        total_snapshots_size += size
 
-            try:
-                snapshots_resp = await api.get_snapshots(store_name)
-                for snap in snapshots_resp.get("data", []):
-                    backup_type = snap.get("backup-type")
-                    backup_id = snap.get("backup-id")
-                    size = snap.get("size", 0)
-                    if not backup_type or not backup_id:
-                        continue
+    for (backup_type, backup_id), count in snapshot_counts_per_node.items():
+        size_bytes = snapshot_sizes_per_node.get((backup_type, backup_id), 0)
+        sensors.append(ProxmoxSnapshotSensorPerNode(coordinator, backup_type, backup_id, count, size_bytes))
 
-                    key = (backup_type, backup_id)
-                    snapshot_counts_per_node[key] = snapshot_counts_per_node.get(key, 0) + 1
-                    snapshot_sizes_per_node[key] = snapshot_sizes_per_node.get(key, 0) + size
+    sensors.append(ProxmoxSnapshotTotalSensor(coordinator, total_snapshots_count, total_snapshots_size))
 
-                    total_snapshots_count += 1
-                    total_snapshots_size += size
-
-            except Exception as e:
-                _LOGGER.warning("Failed to get snapshots for %s: %s", store_name, e)
-
-        for (backup_type, backup_id), count in snapshot_counts_per_node.items():
-            size_bytes = snapshot_sizes_per_node.get((backup_type, backup_id), 0)
-            sensors.append(ProxmoxSnapshotSensorPerNode(backup_type, backup_id, count, size_bytes))
-
-        sensors.append(ProxmoxSnapshotTotalSensor(total_snapshots_count, total_snapshots_size))
-
-        try:
-            gc_data = await api.get_gc_status()
-            for gc_entry in gc_data.get("data", []):
-                store = gc_entry.get("store")
-                if not store:
-                    continue
-                sensors.append(ProxmoxBackupGCSensor(store, gc_entry))
-        except Exception as e:
-            _LOGGER.warning("Failed to get GC status: %s", e)
-
-    except Exception as e:
-        _LOGGER.error("Error setting up Proxmox sensors: %s", e)
-        return
+    # GC sensors
+    for gc_entry in coordinator.data.get("gc", []):
+        store = gc_entry.get("store")
+        if store:
+            sensors.append(ProxmoxBackupGCSensor(coordinator, store, gc_entry))
 
     async_add_entities(sensors)
-    await api.close()
 
 
 class ProxmoxBackupSensor(Entity):
-    def __init__(self, name, usage):
+    def __init__(self, coordinator, name, usage):
+        self.coordinator = coordinator
         self._name = name
-        self._used = usage.get("used", 0)
-        self._total = usage.get("total", 0)
-        self._avail = usage.get("avail", 0)
+        self._usage = usage
 
     @property
     def name(self):
@@ -108,16 +76,19 @@ class ProxmoxBackupSensor(Entity):
 
     @property
     def state(self):
-        return self._used
+        return self._usage.get("used", 0)
 
     @property
     def extra_state_attributes(self):
+        used = self._usage.get("used", 0)
+        total = self._usage.get("total", 0)
+        avail = self._usage.get("avail", 0)
         return {
-            "used_bytes": self._used,
-            "total_bytes": self._total,
-            "available_bytes": self._avail,
-            "used_percent": round((self._used / self._total) * 100, 2) if self._total else None,
-            "free_percent": round((self._avail / self._total) * 100, 2) if self._total else None,
+            "used_bytes": used,
+            "total_bytes": total,
+            "available_bytes": avail,
+            "used_percent": round((used / total) * 100, 2) if total else None,
+            "free_percent": round((avail / total) * 100, 2) if total else None,
         }
 
     @property
@@ -132,9 +103,17 @@ class ProxmoxBackupSensor(Entity):
     def icon(self):
         return "mdi:harddisk"
 
+    async def async_update(self):
+        await self.coordinator.async_request_refresh()
+
+    @property
+    def available(self):
+        return self.coordinator.last_update_success
+
 
 class ProxmoxSnapshotSensorPerNode(Entity):
-    def __init__(self, backup_type, backup_id, count, size_bytes):
+    def __init__(self, coordinator, backup_type, backup_id, count, size_bytes):
+        self.coordinator = coordinator
         self._backup_type = backup_type
         self._backup_id = backup_id
         self._count = count
@@ -181,9 +160,17 @@ class ProxmoxSnapshotSensorPerNode(Entity):
             size /= 1024
         return f"{size:.{decimal_places}f} PB"
 
+    async def async_update(self):
+        await self.coordinator.async_request_refresh()
+
+    @property
+    def available(self):
+        return self.coordinator.last_update_success
+
 
 class ProxmoxSnapshotTotalSensor(Entity):
-    def __init__(self, total_count, total_size_bytes):
+    def __init__(self, coordinator, total_count, total_size_bytes):
+        self.coordinator = coordinator
         self._total_count = total_count
         self._total_size_bytes = total_size_bytes
 
@@ -226,9 +213,17 @@ class ProxmoxSnapshotTotalSensor(Entity):
             size /= 1024
         return f"{size:.{decimal_places}f} PB"
 
+    async def async_update(self):
+        await self.coordinator.async_request_refresh()
+
+    @property
+    def available(self):
+        return self.coordinator.last_update_success
+
 
 class ProxmoxBackupGCSensor(Entity):
-    def __init__(self, store, gc_data):
+    def __init__(self, coordinator, store, gc_data):
+        self.coordinator = coordinator
         self._store = store
         self._gc_data = gc_data
 
@@ -274,3 +269,10 @@ class ProxmoxBackupGCSensor(Entity):
     @property
     def icon(self):
         return "mdi:recycle"
+
+    async def async_update(self):
+        await self.coordinator.async_request_refresh()
+
+    @property
+    def available(self):
+        return self.coordinator.last_update_success
