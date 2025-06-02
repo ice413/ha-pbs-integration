@@ -51,8 +51,8 @@ async def async_setup_entry(
 
     for (backup_type, backup_id), count in snapshot_counts_per_node.items():
         size_bytes = snapshot_sizes_per_node.get((backup_type, backup_id), 0)
+        #sensors.append(ProxmoxSnapshotSensorPerNode(coordinator, backup_type, backup_id, count, size_bytes))
         sensors.append(ProxmoxSnapshotSensorPerNode(coordinator, backup_type, backup_id, count, size_bytes))
-
     sensors.append(ProxmoxSnapshotTotalSensor(coordinator, total_snapshots_count, total_snapshots_size))
 
     # GC sensors
