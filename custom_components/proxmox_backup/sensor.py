@@ -26,8 +26,8 @@ async def async_setup_entry(
 
     # Usage sensors
     usage_data = coordinator.data.get("usage", {})
-    for store_name, usage in usage_data.items():
-        sensors.append(ProxmoxBackupSensor(coordinator, store_name, usage))
+    for store_name in usage_data:
+        sensors.append(ProxmoxBackupSensor(coordinator, store_name))
 
     # Snapshot sensors aggregation
     snapshot_counts_per_node = {}
@@ -308,5 +308,3 @@ class ProxmoxBackupGCSensor(Entity):
     @property
     def available(self):
         return self.coordinator.last_update_success
-
-
