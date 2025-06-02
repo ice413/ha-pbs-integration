@@ -8,7 +8,8 @@ import logging
 from datetime import datetime
 
 _LOGGER = logging.getLogger(__name__)
-
+# This file defines sensors for Proxmox Backup integration in Home Assistant.
+# It includes sensors for usage, snapshots per node, total snapshots, and garbage collection status.
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -16,11 +17,6 @@ async def async_setup_entry(
 ) -> None:
     """Set up Proxmox Backup sensors from a config entry using DataUpdateCoordinator."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
-
-#    coordinator = ProxmoxBackupCoordinator(hass, entry)
-#    await coordinator.async_config_entry_first_refresh()
-
-
 
     sensors = []
 
@@ -34,7 +30,9 @@ async def async_setup_entry(
     snapshot_sizes_per_node = {}
     total_snapshots_count = 0
     total_snapshots_size = 0
-
+# Aggregate snapshot counts and sizes per backup type and ID
+# This will create a sensor for each unique backup type and ID combination
+# and calculate the total snapshots and sizes across all nodes.
     for snap in coordinator.data.get("snapshots", []):
         backup_type = snap.get("backup-type")
         backup_id = snap.get("backup-id")
@@ -48,7 +46,7 @@ async def async_setup_entry(
 
         total_snapshots_count += 1
         total_snapshots_size += size
-
+# Create sensors for each unique backup type and ID combination
     for (backup_type, backup_id), count in snapshot_counts_per_node.items():
         size_bytes = snapshot_sizes_per_node.get((backup_type, backup_id), 0)
         #sensors.append(ProxmoxSnapshotSensorPerNode(coordinator, backup_type, backup_id, count, size_bytes))
@@ -64,7 +62,7 @@ async def async_setup_entry(
 
     async_add_entities(sensors)
 
-
+# ProxmoxBackupSensor is a sensor that reports the usage of a Proxmox Backup store.
 class ProxmoxBackupSensor(Entity):
     def __init__(self, coordinator, store_name):
         self.coordinator = coordinator
@@ -122,8 +120,6 @@ class ProxmoxBackupSensor(Entity):
     @property
     def available(self):
         return self.coordinator.last_update_success
-
-
 
 class ProxmoxSnapshotSensorPerNode(Entity):
     def __init__(self, coordinator, backup_type, backup_id):
@@ -197,7 +193,6 @@ class ProxmoxSnapshotSensorPerNode(Entity):
         return self.coordinator.last_update_success
 
 
-
 class ProxmoxSnapshotTotalSensor(Entity):
     def __init__(self, coordinator):
         self.coordinator = coordinator
@@ -226,6 +221,7 @@ class ProxmoxSnapshotTotalSensor(Entity):
             "total_snapshot_size_human": self._human_readable_size(total_size),
         }
 
+
     def _human_readable_size(self, size, decimal_places=2):
         for unit in ["B", "KB", "MB", "GB", "TB"]:
             if size < 1024:
@@ -241,8 +237,7 @@ class ProxmoxSnapshotTotalSensor(Entity):
     def available(self):
         return self.coordinator.last_update_success
 
-
-
+# ProxmoxBackupGCSensor is a sensor that reports the garbage collection status of a Proxmox Backup store.
 class ProxmoxBackupGCSensor(Entity):
     def __init__(self, coordinator, store):
         self.coordinator = coordinator
@@ -278,7 +273,8 @@ class ProxmoxBackupGCSensor(Entity):
             "disk_bytes": gc_data.get("disk-bytes"),
             "deduplication_factor": dedup_factor,
         }
-
+# This method retrieves the garbage collection data for the specified store.
+# It searches through the coordinator's data for the "gc" entries and returns the one matching the store.
     def _get_gc_data(self):
         for entry in self.coordinator.data.get("gc", []):
             if entry.get("store") == self._store:
@@ -292,7 +288,7 @@ class ProxmoxBackupGCSensor(Entity):
             return datetime.fromtimestamp(ts).isoformat()
         except Exception:
             return str(ts)
-
+# This method calculates the deduplication factor based on the index and disk data bytes.
     def _calculate_dedup_factor(self, gc_data):
         index_data = gc_data.get("index-data-bytes", 0)
         disk_data = gc_data.get("disk-bytes", 1)
@@ -309,5 +305,3 @@ class ProxmoxBackupGCSensor(Entity):
     @property
     def available(self):
         return self.coordinator.last_update_success
-
-

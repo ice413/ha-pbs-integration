@@ -1,5 +1,8 @@
 import aiohttp
 
+# Proxmox Backup API Client
+# This module provides an asynchronous client for interacting with the Proxmox Backup Server API.
+
 class ProxmoxBackupAPI:
     def __init__(self, host, token_id, token_secret):
         self.base_url = f"https://{host}/api2/json"
@@ -7,7 +10,7 @@ class ProxmoxBackupAPI:
             "Authorization": f"PBSAPIToken={token_id}:{token_secret}"
         }
         self._session = None
-
+#        self._verify_ssl = False  # Set to True if you want to verify SSL certificates
     async def _get_session(self):
         if self._session is None:
             self._session = aiohttp.ClientSession(headers=self.headers, connector=aiohttp.TCPConnector(ssl=False))

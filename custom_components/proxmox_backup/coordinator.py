@@ -1,9 +1,9 @@
 import logging
 from datetime import timedelta
-
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 _LOGGER = logging.getLogger(__name__)
+
 
 class ProxmoxBackupCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, api, update_interval):
@@ -18,7 +18,7 @@ class ProxmoxBackupCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self):
         """Fetch data from the Proxmox Backup Server API."""
-
+#        This method is called by the DataUpdateCoordinator to fetch data.
         try:
             datastores_resp = await self.api.get_datastores()
             datastores = datastores_resp.get("data", [])
@@ -44,13 +44,13 @@ class ProxmoxBackupCoordinator(DataUpdateCoordinator):
             # Get GC status
             gc_resp = await self.api.get_gc_status()
             gc_data = gc_resp.get("data", [])
-
+#            # Prepare the final data structure
             return {
                 "usage": usage_data,
                 "snapshots": snapshots,
                 "gc": gc_data,
             }
-
+#           # Handle any errors in the API response
         except Exception as err:
             _LOGGER.error("Error fetching data from Proxmox Backup Server: %s", err)
             raise UpdateFailed(f"Error fetching data: {err}")

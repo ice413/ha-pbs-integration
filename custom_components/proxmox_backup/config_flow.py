@@ -3,9 +3,11 @@ from homeassistant import config_entries
 from .const import DOMAIN
 from .api import ProxmoxBackupAPI
 
+# Proxmox Backup Server integration for Home Assistant
+# This code implements a configuration flow for connecting to a Proxmox Backup Server.
 class ProxmoxBackupConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
-
+# This class handles the configuration flow for the Proxmox Backup integration.
     async def async_step_user(self, user_input=None):
         errors = {}
 
@@ -26,11 +28,11 @@ class ProxmoxBackupConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
             finally:
                 await api.close()
-
+# If the user input is not valid, show the form again with errors.
         data_schema = vol.Schema({
             vol.Required("pbs_host"): str,
             vol.Required("pbs_token_id"): str,
             vol.Required("pbs_token"): str,
         })
-
+# If there are errors, show the form with those errors.
         return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
