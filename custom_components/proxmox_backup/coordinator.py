@@ -1,24 +1,56 @@
-from datetime import timedelta
 import logging
-from homeassistant.core import HomeAssistant
+from datetime import timedelta
+
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from .api import ProxmoxBackupAPI
 
 _LOGGER = logging.getLogger(__name__)
 
-class ProxmoxBackupDataUpdateCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass: HomeAssistant, api: ProxmoxBackupAPI, update_interval: int):
+class ProxmoxBackupCoordinator(DataUpdateCoordinator):
+    def __init__(self, hass, api):
+        """Initialize coordinator."""
         self.api = api
         super().__init__(
             hass,
             _LOGGER,
-            name="ProxmoxBackupDataUpdateCoordinator",
-            update_interval=timedelta(seconds=update_interval),
+            name="Proxmox Backup Server",
+            update_interval=timedelta(seconds=60),
         )
 
     async def _async_update_data(self):
-        try:
-            return await self.api.get_datastores()
-        except Exception as e:
-            raise UpdateFailed(f"Error fetching data: {e}")
+        """Fetch data from the Proxmox Backup Server API."""
 
+        try:
+            datastores_resp = await self.api.get_datastores()
+            datastores = datastores_resp.get("data", [])
+
+            usage_data = {}
+            snapshots = []
+            gc_data = []
+
+            # Gather usage info for each datastore
+            for ds in datastores:
+                store_name = ds.get("store")
+                if not store_name:
+                    continue
+
+                usage_resp = await self.api.get_datastore_status(store_name)
+                usage = usage_resp.get("data", {})
+                usage_data[store_name] = usage
+
+                # Gather snapshots for each datastore
+                snapshots_resp = await self.api.get_snapshots(store_name)
+                snapshots.extend(snapshots_resp.get("data", []))
+
+            # Get GC status
+            gc_resp = await self.api.get_gc_status()
+            gc_data = gc_resp.get("data", [])
+
+            return {
+                "usage": usage_data,
+                "snapshots": snapshots,
+                "gc": gc_data,
+            }
+
+        except Exception as err:
+            _LOGGER.error("Error fetching data from Proxmox Backup Server: %s", err)
+            raise UpdateFailed(f"Error fetching data: {err}")
