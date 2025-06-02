@@ -6,14 +6,14 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 _LOGGER = logging.getLogger(__name__)
 
 class ProxmoxBackupCoordinator(DataUpdateCoordinator):
-    def __init__(self, hass, api):
+    def __init__(self, hass, api, update_interval):
         """Initialize coordinator."""
         self.api = api
         super().__init__(
             hass,
             _LOGGER,
             name="Proxmox Backup Server",
-            update_interval=timedelta(seconds=60),
+            update_interval=timedelta(seconds=update_interval),
         )
 
     async def _async_update_data(self):
@@ -54,3 +54,4 @@ class ProxmoxBackupCoordinator(DataUpdateCoordinator):
         except Exception as err:
             _LOGGER.error("Error fetching data from Proxmox Backup Server: %s", err)
             raise UpdateFailed(f"Error fetching data: {err}")
+

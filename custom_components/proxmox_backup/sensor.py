@@ -15,11 +15,11 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up Proxmox Backup sensors from a config entry using DataUpdateCoordinator."""
+    coordinator = hass.data[DOMAIN][entry.entry_id]
 
 #    coordinator = ProxmoxBackupCoordinator(hass, entry)
 #    await coordinator.async_config_entry_first_refresh()
 
-coordinator = hass.data[DOMAIN][entry.entry_id]
 
 
     sensors = []
@@ -280,3 +280,4 @@ class ProxmoxBackupGCSensor(Entity):
     @property
     def available(self):
         return self.coordinator.last_update_success
+

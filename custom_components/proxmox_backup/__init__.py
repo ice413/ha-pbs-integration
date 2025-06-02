@@ -3,7 +3,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.typing import ConfigType
 from .const import DOMAIN
 from .api import ProxmoxBackupAPI
-from .coordinator import ProxmoxBackupDataUpdateCoordinator
+from .coordinator import ProxmoxBackupCoordinator
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
@@ -15,7 +15,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     update_interval = entry.options.get("update_interval", 60)
 
     api = ProxmoxBackupAPI(host, token_id, token)
-    coordinator = ProxmoxBackupDataUpdateCoordinator(hass, api, update_interval)
+    coordinator = ProxmoxBackupCoordinator(hass, api, update_interval)
     await coordinator.async_config_entry_first_refresh()
 
     hass.data.setdefault(DOMAIN, {})
@@ -35,5 +35,3 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def update_listener(hass: HomeAssistant, entry: ConfigEntry):
     await hass.config_entries.async_reload(entry.entry_id)
-
-
