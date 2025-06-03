@@ -12,7 +12,8 @@
         }
       },
       "error": {
-        "cannot_connect": "Unable to connect to the server"
+        "cannot_connect": "Unable to connect to the server",
+        "invalid_interval": "Update interval must be a positive number"
       },
       "abort": {
         "already_configured": "This server is already configured"

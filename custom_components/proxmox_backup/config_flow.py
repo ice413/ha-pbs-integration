@@ -33,6 +33,7 @@ class ProxmoxBackupConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             vol.Required("pbs_host"): str,
             vol.Required("pbs_token_id"): str,
             vol.Required("pbs_token"): str,
+            vol.Optional("update_interval", default=60): int,  # Default to 60 seconds
         })
 # If there are errors, show the form with those errors.
         return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)

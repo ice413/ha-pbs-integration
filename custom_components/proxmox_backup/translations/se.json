@@ -12,7 +12,8 @@
         }
       },
       "error": {
-        "cannot_connect": "Kan inte ansluta till servern"
+        "cannot_connect": "Kan inte ansluta till servern",
+        "invalid_interval": "Uppdateringsintervallet måste vara ett positivt tal"
       },
       "abort": {
         "already_configured": "Den här servern är redan konfigurerad"

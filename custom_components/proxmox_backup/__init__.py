@@ -4,7 +4,9 @@ from homeassistant.helpers.typing import ConfigType
 from .const import DOMAIN
 from .api import ProxmoxBackupAPI
 from .coordinator import ProxmoxBackupCoordinator
+import logging
 
+_LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     return True
@@ -15,19 +17,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     host = entry.data.get("pbs_host")
     token_id = entry.data.get("pbs_token_id")
     token = entry.data.get("pbs_token")
-    update_interval = entry.options.get("update_interval", 60)
+    update_interval = entry.options.get("update_interval", entry.data.get("update_interval", 60))
 
-    api = ProxmoxBackupAPI(host, token_id, token)
-    coordinator = ProxmoxBackupCoordinator(hass, api, update_interval)
-    await coordinator.async_config_entry_first_refresh()
+    try:
+        # Initialize the API and coordinator
+        api = ProxmoxBackupAPI(host, token_id, token)
+        coordinator = ProxmoxBackupCoordinator(hass, api, update_interval)
+        await coordinator.async_config_entry_first_refresh()
 
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = coordinator
+        # Store the coordinator in hass.data
+        hass.data.setdefault(DOMAIN, {})
+        hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
+        # Forward the entry setup to the sensor platform
+        await hass.config_entries.async_forward_entry_setups(entry, ["sensor"])
 
-    entry.async_on_unload(entry.add_update_listener(update_listener))
-    return True
+        # Register the update listener
+        entry.async_on_unload(entry.add_update_listener(update_listener))
+
+        _LOGGER.info("Proxmox Backup integration successfully set up for host: %s", host)
+        return True
+
+    except Exception as e:
+        _LOGGER.error("Failed to set up Proxmox Backup integration for host %s: %s", host, e)
+        return False
 
 # This function is called when the integration is unloaded or removed.
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
