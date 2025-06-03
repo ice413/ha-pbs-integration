@@ -1,0 +1,46 @@
+{
+    "config": {
+      "step": {
+        "user": {
+          "title": "Anslut till Proxmox Backup",
+          "description": "Ange dina Proxmox Backup Server-uppgifter",
+          "data": {
+            "pbs_host": "PBS-värd",
+            "pbs_token_id": "Token-ID",
+            "pbs_token": "Token-hemlighet"
+          }
+        }
+      },
+      "error": {
+        "cannot_connect": "Kan inte ansluta till servern"
+      },
+      "abort": {
+        "already_configured": "Den här servern är redan konfigurerad"
+      },
+      "sensor": {
+        "usage": "Proxmox Backup {store_name} Användning",
+        "gc_status": "Proxmox Backup GC-status {store}",
+        "snapshots": "Proxmox Backup {backup_type}/{backup_id} Ögonblicksbilder",
+        "total_snapshots": "Proxmox Backup Totala Ögonblicksbilder"
+      },
+      "attributes": {
+         "store": "Lagring",
+         "last_run_endtime": "Senaste körningens sluttid",
+         "next_run": "Nästa körning",
+         "removed_bytes": "Borttagna byte",
+         "removed_chunks": "Borttagna chunkar",
+         "index_data_bytes": "Indexdata i byte",
+         "disk_bytes": "Diskdata i byte",
+         "deduplication_factor": "Dedupliceringsfaktor"
+      },
+      "states": {
+        "unknown": "Okänd",
+        "success": "Lyckad",
+        "failure": "Misslyckad"
+      },
+      "units": {
+        "bytes": "Byte",
+        "snapshots": "Ögonblicksbilder"
+      }
+ }
+}

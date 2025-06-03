@@ -16,6 +16,32 @@
       },
       "abort": {
         "already_configured": "This server is already configured"
+      },
+      "sensor": {
+        "usage": "Proxmox Backup {store_name} Usage",
+        "gc_status": "Proxmox Backup GC Status {store}",
+        "snapshots": "Proxmox Backup {backup_type}/{backup_id} Snapshots",
+        "total_snapshots": "Proxmox Backup Total Snapshots"
+      },
+      "attributes": {
+        "store": "Store",
+        "last_run_endtime": "Last Run End Time",
+        "next_run": "Next Run",
+        "removed_bytes": "Removed Bytes",
+        "removed_chunks": "Removed Chunks",
+        "index_data_bytes": "Index Data Bytes",
+        "disk_bytes": "Disk Bytes",
+        "deduplication_factor": "Deduplication Factor"
+      },
+      "states": {
+        "unknown": "Unknown",
+        "success": "Success",
+        "failure": "Failure"
+      },
+      "units": {
+        "bytes": "Bytes",
+        "snapshots": "Snapshots"
       }
+      
     }
   }
