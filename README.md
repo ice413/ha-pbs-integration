@@ -1,7 +1,5 @@
-# ProxmoxBackupServer integration  
-
-Add custom-repo in HACS  
-restart  
+Add custom-repo in HACS
+restart
 add integration
 
 ## Setup:
@@ -69,6 +67,38 @@ LXC:sensor.proxmox_backup_ct_101_snapshots: 2
     friendly_name: Proxmox Backup ct/101 Snapshots
 ```
 
+# Usage:  
+```yaml
+type: custom:mushroom-template-card
+primary: Hello, {{ user }}
+icon: mdi:home
+secondary: >-
+  Backup status:
+
+  Datastore usage: {{ (states('sensor.proxmox_backup_backups_usage') | float /
+  1073741824) | round(2) }} GB
+
+  Total num snapshots: {{ states('sensor.proxmox_backup_total_snapshots') }}
+
+  GC: {{ states('sensor.proxmox_backup_gc_status_backups') }}  
+
+  DD Ratio: {{ state_attr('sensor.proxmox_backup_gc_status_backups',
+  'deduplication_factor') }}
+
+  VM:{% for entity in states.sensor if
+  entity.entity_id.startswith('sensor.proxmox_backup_vm_106') %}
+    {{ entity.entity_id }}: {{ entity.state }}
+  {% endfor %}
+
+  LXC: {% for entity in states.sensor if
+  entity.entity_id.startswith('sensor.proxmox_backup_ct_100') %}
+    {{ entity.entity_id }}: {{ entity.state }}
+  {% endfor %}
+fill_container: false
+multiline_secondary: true
+```
+This will render:  
+![screenshot](images/mushroom_template_card.png)
 
 # All Endpoint available:
 
