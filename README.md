@@ -31,6 +31,7 @@ Total snapshot count: sensor.proxmox_backup_total_snapshots
     device_class: count
     icon: mdi:backup-restore
     friendly_name: Proxmox Backup Total Snapshots
+
 GC: OK
     Attr:
     store: Backups
@@ -50,6 +51,7 @@ VM: sensor.proxmox_backup_vm_105_snapshots: 2
     snapshot_count: 2
     total_snapshot_size_bytes: 68719478611
     total_snapshot_size_human: 64.00 GB
+    latest_snapshot_comment: 106-hassos
     unit_of_measurement: snapshots
     device_class: count
     icon: mdi:backup-restore
@@ -61,6 +63,7 @@ LXC:sensor.proxmox_backup_ct_101_snapshots: 2
     snapshot_count: 2
     total_snapshot_size_bytes: 6130701190
     total_snapshot_size_human: 5.71 GB
+    latest_snapshot_comment: 101-part-db
     unit_of_measurement: snapshots
     device_class: count
     icon: mdi:backup-restore
