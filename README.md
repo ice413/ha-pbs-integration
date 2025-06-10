@@ -8,6 +8,8 @@ host: https://<YOUR_HOST>:<PORT>
 Token_id: get it from your pbs ( user@pbs!<token-name>)
 token: The secret token from pbs
 ```
+Dont forget to add permissions to the user as well as the token  
+
 *Update_interval is set in "__init__.py" so far.  
  Will be added to UI-setup as well*
 
