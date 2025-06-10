@@ -145,12 +145,14 @@ class ProxmoxSnapshotSensorPerNode(Entity):
     @property
     def extra_state_attributes(self):
         size = self._get_snapshot_size()
+        latest_comment = self._get_latest_snapshot_comment()
         return {
             "backup_type": self._backup_type,
             "backup_id": self._backup_id,
             "snapshot_count": self._get_snapshot_count(),
             "total_snapshot_size_bytes": size,
             "total_snapshot_size_human": self._human_readable_size(size),
+            "latest_snapshot_comment": latest_comment,
         }
 
     def _get_snapshot_count(self):
@@ -164,6 +166,16 @@ class ProxmoxSnapshotSensorPerNode(Entity):
             snap.get("size", 0) for snap in self.coordinator.data.get("snapshots", [])
             if snap.get("backup-type") == self._backup_type and snap.get("backup-id") == self._backup_id
         )
+
+    def _get_latest_snapshot_comment(self):
+        snapshots = [
+            snap for snap in self.coordinator.data.get("snapshots", [])
+            if snap.get("backup-type") == self._backup_type and snap.get("backup-id") == self._backup_id
+        ]
+        if not snapshots:
+            return None
+        latest = max(snapshots, key=lambda s: s.get("ctime", 0))
+        return latest.get("comment", "No comment")
 
     def _human_readable_size(self, size, decimal_places=2):
         for unit in ["B", "KB", "MB", "GB", "TB"]:
@@ -191,6 +203,7 @@ class ProxmoxSnapshotSensorPerNode(Entity):
     @property
     def available(self):
         return self.coordinator.last_update_success
+
 
 
 class ProxmoxSnapshotTotalSensor(Entity):
