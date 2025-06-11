@@ -193,8 +193,3 @@ This will render:
   /api2/json/version
 
 ```
-
-
-###  Feature:  
-Added action to create a new release when pushed to main
-should work now.
