@@ -193,3 +193,7 @@ This will render:
   /api2/json/version
 
 ```
+
+Now with working actions that create a new release when pushed   
+to main, with conventional commit.  
+
