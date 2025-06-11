@@ -1,3 +1,10 @@
+## [1.1.8](https://github.com/ice413/ha-pbs-integration/compare/v1.1.7...v1.1.8) (2025-06-11)
+
+
+### Bug Fixes
+
+* Updated README ([ebdc141](https://github.com/ice413/ha-pbs-integration/commit/ebdc141b63f17da163aff7cf2ab468188c10c534))
+
 # 1.0.0 (2025-06-11)
 
 
