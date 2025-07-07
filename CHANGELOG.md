@@ -1,3 +1,10 @@
+## [1.1.9](https://github.com/ice413/ha-pbs-integration/compare/v1.1.8...v1.1.9) (2025-07-07)
+
+
+### Bug Fixes
+
+* fixed automated update of new guests ([18203f9](https://github.com/ice413/ha-pbs-integration/commit/18203f94c196b545e4c3ce6e5db42c303c65a832))
+
 ## [1.1.8](https://github.com/ice413/ha-pbs-integration/compare/v1.1.7...v1.1.8) (2025-06-11)
 
 
