@@ -15,52 +15,53 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up Proxmox Backup sensors from a config entry using DataUpdateCoordinator."""
     coordinator = hass.data[DOMAIN][entry.entry_id]
 
+    added_snapshot_keys = set()
     sensors = []
 
-    # Usage sensors
+    # Initial usage sensors
     usage_data = coordinator.data.get("usage", {})
     for store_name, usage in usage_data.items():
         sensors.append(ProxmoxBackupSensor(coordinator, store_name))
 
-    # Snapshot sensors aggregation
-    snapshot_counts_per_node = {}
-    snapshot_sizes_per_node = {}
-    total_snapshots_count = 0
-    total_snapshots_size = 0
-# Aggregate snapshot counts and sizes per backup type and ID
-# This will create a sensor for each unique backup type and ID combination
-# and calculate the total snapshots and sizes across all nodes.
-    for snap in coordinator.data.get("snapshots", []):
-        backup_type = snap.get("backup-type")
-        backup_id = snap.get("backup-id")
-        size = snap.get("size", 0)
-        if not backup_type or not backup_id:
-            continue
-
-        key = (backup_type, backup_id)
-        snapshot_counts_per_node[key] = snapshot_counts_per_node.get(key, 0) + 1
-        snapshot_sizes_per_node[key] = snapshot_sizes_per_node.get(key, 0) + size
-
-        total_snapshots_count += 1
-        total_snapshots_size += size
-# Create sensors for each unique backup type and ID combination
-    for (backup_type, backup_id), count in snapshot_counts_per_node.items():
-        size_bytes = snapshot_sizes_per_node.get((backup_type, backup_id), 0)
-        #sensors.append(ProxmoxSnapshotSensorPerNode(coordinator, backup_type, backup_id, count, size_bytes))
-        sensors.append(ProxmoxSnapshotSensorPerNode(coordinator, backup_type, backup_id))
-
-    sensors.append(ProxmoxSnapshotTotalSensor(coordinator))
-
-    # GC sensors
+    # Initial GC sensors
     for gc_entry in coordinator.data.get("gc", []):
         store = gc_entry.get("store")
         if store:
             sensors.append(ProxmoxBackupGCSensor(coordinator, store))
 
+    # Total snapshot sensor
+    sensors.append(ProxmoxSnapshotTotalSensor(coordinator))
+
     async_add_entities(sensors)
+
+    # Function to dynamically add new snapshot sensors
+    async def update_snapshot_sensors():
+        new_entities = []
+        snapshot_counts_per_node = {}
+        snapshot_sizes_per_node = {}
+
+        for snap in coordinator.data.get("snapshots", []):
+            backup_type = snap.get("backup-type")
+            backup_id = snap.get("backup-id")
+            if not backup_type or not backup_id:
+                continue
+
+            key = (backup_type, backup_id)
+            if key not in added_snapshot_keys:
+                new_entities.append(ProxmoxSnapshotSensorPerNode(coordinator, backup_type, backup_id))
+                added_snapshot_keys.add(key)
+
+        if new_entities:
+            async_add_entities(new_entities)
+
+    # Add initial snapshot sensors
+    await update_snapshot_sensors()
+
+    # Register listener for future updates
+    coordinator.async_add_listener(update_snapshot_sensors)
+
 
 # ProxmoxBackupSensor is a sensor that reports the usage of a Proxmox Backup store.
 class ProxmoxBackupSensor(Entity):
